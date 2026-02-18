@@ -26,10 +26,19 @@ class MyApp extends StatelessWidget {
 
 class MyAppState extends ChangeNotifier {
   var current = WordPair.random();
+  var past = <WordPair>[];
 
   void getNext() {
+    past.add(current);
     current = WordPair.random();
     notifyListeners();
+  }
+
+  void getPrevious() {
+    if (past.isNotEmpty) {
+      current = past.removeLast();
+      notifyListeners();
+    }
   }
 
   var favorites = <WordPair>[];
@@ -40,6 +49,11 @@ class MyAppState extends ChangeNotifier {
     } else {
       favorites.add(current);
     }
+    notifyListeners();
+  }
+
+  void removeFavorite(WordPair word) {
+    favorites.remove(word);
     notifyListeners();
   }
 }
@@ -125,7 +139,12 @@ class FavoritesPage extends StatelessWidget {
         ),
         for (var word in appState.favorites) 
           ListTile(
-            leading: Icon(Icons.favorite),
+            leading: IconButton(
+              icon: Icon(Icons.delete_outline),
+              onPressed: () {
+                appState.removeFavorite(word);
+              },
+            ),
             title: Text(word.asLowerCase)
           )
       ]
@@ -141,6 +160,7 @@ class GeneratorPage extends StatelessWidget {
 
   var appState = context.watch<MyAppState>();
   var pair = appState.current;
+  var past = appState.past;
 
     return Scaffold(
       body: Center(
@@ -154,6 +174,13 @@ class GeneratorPage extends StatelessWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                ElevatedButton(
+                  onPressed: past.isEmpty ? null : () {
+                    appState.getPrevious();
+                  },
+                  child: Text("Previous"),
+                ),
+                SizedBox(width: 8),
                 ElevatedButton.icon(
                   onPressed: () {
                     appState.toggleFavorite();
@@ -161,6 +188,7 @@ class GeneratorPage extends StatelessWidget {
                   icon: Icon(appState.favorites.contains(pair) ? Icons.favorite : Icons.favorite_border),
                   label: Text("Like"),
                 ),
+                SizedBox(width: 8),
                 ElevatedButton(
                   onPressed: () {
                     appState.getNext();
